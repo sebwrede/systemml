@@ -43,7 +43,7 @@ public class FederatedLocalData extends FederatedData {
 	}
 
 	@Override
-	boolean equalAddress(FederatedData that) {
+	public boolean equalAddress(FederatedData that) {
 		return that.getClass().equals(this.getClass());
 	}
 

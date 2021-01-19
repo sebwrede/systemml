@@ -53,6 +53,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Promise;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
@@ -69,6 +70,8 @@ public class FederatedData {
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
 	private long _varID = -1; // -1 is never valid since varIDs start at 0
+
+	private PrivacyConstraint privacyConstraint;
 
 	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath) {
 		_dataType = dataType;
@@ -105,11 +108,19 @@ public class FederatedData {
 		return _dataType;
 	}
 
+	public PrivacyConstraint getPrivacyConstraint() {
+		return privacyConstraint;
+	}
+
+	public void setPrivacyConstraint(PrivacyConstraint privacyConstraint) {
+		this.privacyConstraint = privacyConstraint;
+	}
+
 	public boolean isInitialized() {
 		return _varID != -1;
 	}
 
-	boolean equalAddress(FederatedData that) {
+	public boolean equalAddress(FederatedData that) {
 		return _address != null && that != null && that._address != null && _address.equals(that._address);
 	}
 

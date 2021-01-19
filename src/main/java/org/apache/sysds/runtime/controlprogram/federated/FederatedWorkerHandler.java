@@ -248,7 +248,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			frameObject.release();
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
-		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
+		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc, cd.getPrivacyConstraint()});
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {

@@ -241,6 +241,12 @@ public class FederationMap {
 		// FederationUtils.waitFor(tmp);
 	}
 
+	public boolean hasPrivacyConstraint(){
+		return _fedMap.values().stream().anyMatch(
+			federatedData ->
+				federatedData.getPrivacyConstraint() != null && federatedData.getPrivacyConstraint().hasConstraints());
+	}
+
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {
 		// empty b array
 		if( b == null || b.length==0 ) {

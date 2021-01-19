@@ -279,7 +279,7 @@ public class PrivacyPropagator
 				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 			}
 			else {
-				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.NonAggregate);
+				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.Aggregate);
 				inst.setPrivacyConstraint(mergedPrivacyConstraint);
 			}
 			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -313,7 +313,7 @@ public class PrivacyPropagator
 			else {
 				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
 				MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
-				Propagator propagator = null;
+				Propagator propagator;
 				if ( inst.getAppendType() == AppendCPInstruction.AppendType.RBIND )
 					propagator = new RBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
 				else if ( inst.getAppendType() == AppendCPInstruction.AppendType.CBIND )

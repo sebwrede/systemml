@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
 
@@ -245,6 +246,12 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				// wait for initialization and check dimensions
 				FederatedResponse re = idResponse.getRight().get(timeout, TimeUnit.SECONDS);
 				DataCharacteristics dc = (DataCharacteristics) re.getData()[1];
+				// Set privacy constraint of each FederatedData object based on privacy constraint in response
+				for ( FederatedData fedData : fedMapping.values() ){
+					if (fedData.equalAddress(idResponse.getKey())){
+						fedData.setPrivacyConstraint((PrivacyConstraint)re.getData()[2]);
+					}
+				}
 				if( dc.getRows() > output.getNumRows() || dc.getCols() > output.getNumColumns() )
 					throw new DMLRuntimeException("Invalid federated meta data: "
 						+ output.getDataCharacteristics()+" vs federated response: "+dc);

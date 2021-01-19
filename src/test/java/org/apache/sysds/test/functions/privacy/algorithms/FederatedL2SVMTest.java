@@ -58,7 +58,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false,null, true, DMLRuntimeException.class);
+			false,null, false, null);
 	}
 
 	@Test
@@ -66,7 +66,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, null);
 	}
 
 	@Test
@@ -197,7 +197,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -206,7 +206,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, null);
 	}
 
 	@Test
@@ -215,7 +215,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, null);
 	}
 
 	@Test
@@ -225,7 +225,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, DMLRuntimeException.class);
 	}
 
 	// Privacy Level Combinations
@@ -262,7 +262,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, null);
 	}
 
 	@Test
@@ -271,7 +271,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private,
-			false, null, true, DMLRuntimeException.class);
+			false, null, false, null);
 	}
 
 	@Test
@@ -395,7 +395,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-checkPrivacy", 
+			programArgs = new String[] {"-checkPrivacy",
 				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 				"in_Y=" + input("Y"), "out=" + output("Z")};
