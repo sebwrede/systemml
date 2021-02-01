@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.privacy;
 
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -92,7 +94,7 @@ public class FederatedLmCGTest extends AutomatedTestBase
 			Thread t2 = startLocalFedWorkerThread(port2);
 
 			fullDMLScriptName = HOME + "FederatedLmCG" + (doubleFederated?"2":"") + ".dml";
-			
+
 			if (doubleFederated){
 				programArgs = new String[]{
 					"-explain", "-stats", "-nvargs",
@@ -115,18 +117,18 @@ public class FederatedLmCGTest extends AutomatedTestBase
 			//generate actual dataset
 			int halfRows = rows / 2;
 			double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, sparsity, 7);
-			writeInputMatrixWithMTD("X1", X1, false);
+			writeInputMatrixWithMTD("X1", X1, false, new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 			double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, sparsity, 8);
-			writeInputMatrixWithMTD("X2", X2, false);
+			writeInputMatrixWithMTD("X2", X2, false, new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 
 			if ( doubleFederated ){
 				double[][] y1 = getRandomMatrix(halfRows, 1, 0, 10, 1.0, 3);
 				double[][] y2 = getRandomMatrix(halfRows, 1, 0, 10, 1.0, 4);
-				writeInputMatrixWithMTD("y1", y1, false);
-				writeInputMatrixWithMTD("y2", y2, false);
+				writeInputMatrixWithMTD("y1", y1, false, new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+				writeInputMatrixWithMTD("y2", y2, false, new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 			} else {
 				double[][] y = getRandomMatrix(rows, 1, 0, 10, 1.0, 3);
-				writeInputMatrixWithMTD("y", y, false);
+				writeInputMatrixWithMTD("y", y, false, new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 			}
 
 			runTest(true, false, null, -1);
