@@ -162,21 +162,25 @@ public class PrivacyPropagator
 			case AggregateBinary:
 				if ( inst instanceof AggregateBinaryCPInstruction ){
 					// This can only be a matrix multiplication and it does not count as an aggregation in terms of privacy.
-					return preprocessAggregateBinaryCPInstruction((AggregateBinaryCPInstruction)inst, ec);
+					return preprocessAggregateBinaryCPInstruction((BinaryCPInstruction) inst, ec);
 				} else if ( inst instanceof CovarianceCPInstruction ){
 					return preprocessCovarianceCPInstruction((CovarianceCPInstruction)inst, ec);
-				} else preprocessInstructionSimple(inst, ec);
+				} else return preprocessInstructionSimple(inst, ec);
 			case AggregateTernary:
 				//TODO: Support propagation of fine-grained privacy constraints
-				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
+				return preprocessAggregateTernaryCPInstruction((AggregateTernaryCPInstruction) inst, ec);
 			case AggregateUnary:
 				// Assumption: aggregates in one or several dimensions, number of dimensions may change, only certain slices of the data may be aggregated upon, elements do not change position
 				return preprocessAggregateUnaryCPInstruction((AggregateUnaryCPInstruction)inst, ec);
 			case Append:
 				return preprocessAppendCPInstruction((AppendCPInstruction) inst, ec);
 			case Binary:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
+				if ( inst instanceof BinaryMatrixMatrixCPInstruction ){
+					return preprocessAggregateBinaryCPInstruction((BinaryCPInstruction) inst, ec);
+				} else {
+					// TODO: Support propagation of fine-grained privacy constraints
+					return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
+				}
 			case Builtin:
 			case BuiltinNary:
 				//TODO: Support propagation of fine-grained privacy constraints
@@ -266,7 +270,7 @@ public class PrivacyPropagator
 		return inst;
 	}
 
-	private static Instruction preprocessAggregateBinaryCPInstruction(AggregateBinaryCPInstruction inst, ExecutionContext ec){
+	private static Instruction preprocessAggregateBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
 		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
 			PrivacyConstraint mergedPrivacyConstraint;
@@ -437,6 +441,20 @@ public class PrivacyPropagator
 		);
 	}
 
+	public static Instruction preprocessAggregateTernaryCPInstruction(AggregateTernaryCPInstruction inst, ExecutionContext ec){
+		CPOperand[] inputs = inst.getInputs();
+		PrivacyConstraint[] inputConstraints = getInputPrivacyConstraints(ec, inputs);
+		if ( inputConstraints != null ){
+			PrivacyLevel[] inputPrivacyLevels = PrivacyUtils.getGeneralPrivacyLevels(inputConstraints);
+			PrivacyLevel outputPrivacyLevel = corePropagation(inputPrivacyLevels, OperatorType.Aggregate); // Assumes operation is always an aggregate
+			PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint(outputPrivacyLevel);
+			if ( inst.getOutput() != null )
+				inst.getOutput().setPrivacyConstraint(outputPrivacyConstraint);
+			inst.setPrivacyConstraint(outputPrivacyConstraint);
+		}
+		return inst;
+	}
+
 	public static Instruction preprocessTernaryCPInstruction(ComputationCPInstruction inst, ExecutionContext ec){
 		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.output);
 	}
@@ -553,8 +571,9 @@ public class PrivacyPropagator
 	 * @return privacy constraint of variable or null if privacy constraint is not set
 	 */
 	private static PrivacyConstraint getInputPrivacyConstraint(ExecutionContext ec, CPOperand input){
-		if ( input != null && input.getName() != null){
-			Data dd = ec.getVariable(input.getName());
+		if ( input != null && input.getName() != null && ec.containsVariable(input) ){
+			Data dd = (input.getValueType().isUnknown() && input.getDataType().isScalar()) ?
+				ec.getVariable(input.getName()) : ec.getVariable(input);
 			if ( dd != null )
 				return dd.getPrivacyConstraint();
 		}

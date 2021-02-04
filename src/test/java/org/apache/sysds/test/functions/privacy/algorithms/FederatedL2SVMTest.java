@@ -31,6 +31,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.wink.json4j.JSONException;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -321,6 +322,39 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			false, null, true, DMLRuntimeException.class);
 	}
 
+	@Test
+	public void doubleFederatedL2SVMTest2PrivAgg2None() throws JSONException {
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		privacyConstraints.put("Y1", new PrivacyConstraint(PrivacyLevel.None));
+		privacyConstraints.put("Y2", new PrivacyConstraint(PrivacyLevel.None));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
+			false,null, false, null);
+	}
+
+	@Test
+	public void doubleFederatedL2SVMTest4PrivAgg() throws JSONException {
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		privacyConstraints.put("Y1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		privacyConstraints.put("Y2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
+			false,null, false, null);
+	}
+
+	@Test
+	public void doubleFederatedL2SVMTestNoConstraints() throws JSONException {
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.None));
+		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.None));
+		privacyConstraints.put("Y1", new PrivacyConstraint(PrivacyLevel.None));
+		privacyConstraints.put("Y2", new PrivacyConstraint(PrivacyLevel.None));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.None,
+			false,null, false, null);
+	}
+
 	private void federatedL2SVMNoException(Types.ExecMode execMode, Map<String,
 			PrivacyConstraint> privacyConstraintsFederated, Map<String, PrivacyConstraint> privacyConstraintsMatrix,
 			PrivacyLevel expectedPrivacyLevel)
@@ -368,10 +402,17 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			}
 
 			// Write privacy constraints of federated matrix
+			boolean federatedY = false;
 			if ( privacyConstraintsFederated != null ){
 				writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols), privacyConstraintsFederated.get("X1"));
 				writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols), privacyConstraintsFederated.get("X2"));
-				writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, rows), privacyConstraintsFederated.get("Y"));
+				if (privacyConstraintsFederated.containsKey("Y1") && privacyConstraintsFederated.containsKey("Y2")){
+					writeInputMatrixWithMTD("Y1", Arrays.copyOfRange(Y,0,rows/2), false, new MatrixCharacteristics(rows/2, 1, blocksize, rows/2), privacyConstraintsFederated.get("Y1"));
+					writeInputMatrixWithMTD("Y2", Arrays.copyOfRange(Y,rows/2,rows), false, new MatrixCharacteristics(rows/2, 1, blocksize, rows/2), privacyConstraintsFederated.get("Y2"));
+					federatedY = true;
+				} else {
+					writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, rows), privacyConstraintsFederated.get("Y"));
+				}
 			} else {
 				writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 				writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
@@ -382,7 +423,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			fullDMLScriptName = "";
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1);
+			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 			t2 = startLocalFedWorkerThread(port2);
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
@@ -394,11 +435,22 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			runTest(true, exception1, expectedException1, -1);
 
 			// Run actual dml script with federated matrix
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-checkPrivacy",
-				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-				"in_Y=" + input("Y"), "out=" + output("Z")};
+			if ( federatedY ){
+				fullDMLScriptName = SCRIPT_DIR + "functions/privacy/Double" + TEST_NAME + ".dml";
+				programArgs = new String[] {"-checkPrivacy",
+					"-nvargs",
+					"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
+					"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+					"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "out=" + output("Z")};
+			} else {
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[] {"-checkPrivacy",
+					"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
+					"in_Y=" + input("Y"), "out=" + output("Z")};
+			}
+
 			
 			runTest(true, exception2, expectedException2, -1);
 
