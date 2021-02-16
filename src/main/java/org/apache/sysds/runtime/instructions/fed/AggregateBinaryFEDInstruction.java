@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
+import org.apache.sysds.runtime.privacy.PrivacyUtils;
 
 public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateBinaryFEDInstruction.class.getName());
@@ -145,20 +146,37 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
 		if( mo2.getNumColumns() == 1 ) { //MV
-			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
-			//execute federated operations and aggregate
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-			MatrixBlock ret = FederationUtils.bind(tmp, false);
-			ec.setMatrixOutput(output.getName(), ret);
+			//execute federated operations
+			if (PrivacyUtils.ADAPT_FED_PLAN){
+				mo1.getFedMapping().execute(getTID(), fr1, fr2);
+				setOutAsFedMatrix(mo1, mo2, fr2, ec);
+			} else {
+				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
+				//execute federated operations and aggregate
+				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+				MatrixBlock ret = FederationUtils.bind(tmp, false);
+				ec.setMatrixOutput(output.getName(), ret);
+			}
 		}
 		else { //MM
 			//execute federated operations and aggregate
 			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 			mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
-			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID(), mo2.getNumColumns()));
+			setOutAsFedMatrix(mo1, mo2, fr2, ec);
 		}
+	}
+
+	/**
+	 * Set output as federated matrix
+	 * @param mo1 first input
+	 * @param mo2 second input
+	 * @param executionRequest federated request executing the instruction with the ID of the output
+	 * @param ec execution context
+	 */
+	private void setOutAsFedMatrix(MatrixObject mo1, MatrixObject mo2, FederatedRequest executionRequest, ExecutionContext ec){
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		out.setFedMapping(mo1.getFedMapping().copyWithNewID(executionRequest.getID(), mo2.getNumColumns()));
 	}
 }

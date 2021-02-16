@@ -34,6 +34,13 @@ import org.apache.wink.json4j.JSONObject;
 public class PrivacyUtils {
 
 	/**
+	 * Adapt the execution plan of federated executions if set to true.
+	 * Adapting the execution plan changes how federated requests are sent to the federated workers.
+	 * The GET requests will be sent later to wait for subsequent federated instructions.
+	 */
+	public static final boolean ADAPT_FED_PLAN = true;
+
+	/**
 	 * Returns true if the privacy constraint is not null and the privacy level is set to Private or PrivateAggregation.
 	 * This only works for the general privacy levels, the fine-grained constraints are not checked!
 	 * @param constraint to check

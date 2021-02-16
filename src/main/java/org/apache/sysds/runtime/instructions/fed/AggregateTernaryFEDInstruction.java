@@ -56,40 +56,58 @@ public class AggregateTernaryFEDInstruction extends FEDInstruction {
 		if(mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) &&
 			mo3 == null) {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(_ins.input3));
-			FederatedRequest fr2 = FederationUtils.callInstruction(_ins.getInstructionString(),
-				_ins.getOutput(),
-				new CPOperand[] {_ins.input1, _ins.input2, _ins.input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1.getID()});
-			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-
-			if(_ins.output.getDataType().isScalar()) {
-				double sum = 0;
-				for(Future<FederatedResponse> fr : tmp)
-					try {
-						sum += ((ScalarObject) fr.get().getData()[0]).getDoubleValue();
-					}
-					catch(Exception e) {
-						throw new DMLRuntimeException("Federated Get data failed with exception on TernaryFedInstruction", e);
-					}
-
-				ec.setScalarOutput(_ins.output.getName(), new DoubleObject(sum));
-			}
-			else {
-				throw new DMLRuntimeException("Not Implemented Federated Ternary Variation");
-			}
+			generateAndSendRequests(mo1,mo2,ec,fr1);
 		}
 		else {
 			if(mo3 == null)
 				throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
 					+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
 					+ mo2.isFederated() + ":" + mo2.getFedMapping());
-			else
-				throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
-					+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
-					+ mo2.isFederated() + ":" + mo2.getFedMapping() + mo3.isFederated() + ":" + mo3.getFedMapping());
+			else {
+				FederatedRequest[] initialFedReqs = mo1.getFedMapping().broadcastSliced(ec.getMatrixObject(_ins.input3), false);
+				generateAndSendRequests(mo1, mo2, ec, initialFedReqs);
+				//throw new DMLRuntimeException("Federated AggregateTernary not supported with the "
+				//	+ "following federated objects: " + mo1.isFederated() + ":" + mo1.getFedMapping() + " "
+				//	+ mo2.isFederated() + ":" + mo2.getFedMapping() + mo3.isFederated() + ":" + mo3.getFedMapping());
+			}
 		}
+	}
 
+	/**
+	 * Executes the given requests followed by GET and cleanup requests.
+	 * The output is summed and set as a scalar.
+	 * @param mo1 first input matrix object
+	 * @param mo2 second input matrix object
+	 * @param ec execution context
+	 * @param initialFedReqs initial requests to execute before GET and cleanup
+	 */
+	private void generateAndSendRequests(MatrixObject mo1, MatrixObject mo2, ExecutionContext ec, FederatedRequest... initialFedReqs){
+		FederatedRequest fr2 = FederationUtils.callInstruction(_ins.getInstructionString(),
+			_ins.getOutput(),
+			new CPOperand[] {_ins.input1, _ins.input2, _ins.input3},
+			new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), initialFedReqs[0].getID()});
+		FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+		FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), initialFedReqs[0].getID(), fr2.getID());
+		Future<FederatedResponse>[] tmp;
+		if ( initialFedReqs.length > 1)
+			tmp = mo1.getFedMapping().execute(getTID(), initialFedReqs, fr2, fr3, fr4);
+		else
+			tmp = mo1.getFedMapping().execute(getTID(), initialFedReqs[0], fr2, fr3, fr4);
+
+		if(_ins.output.getDataType().isScalar()) {
+			double sum = 0;
+			for(Future<FederatedResponse> fr : tmp)
+				try {
+					sum += ((ScalarObject) fr.get().getData()[0]).getDoubleValue();
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException("Federated Get data failed with exception on TernaryFedInstruction", e);
+				}
+
+			ec.setScalarOutput(_ins.output.getName(), new DoubleObject(sum));
+		}
+		else {
+			throw new DMLRuntimeException("Not Implemented Federated Ternary Variation");
+		}
 	}
 }
