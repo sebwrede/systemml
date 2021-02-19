@@ -35,6 +35,7 @@ public abstract class FEDInstruction extends Instruction {
 		Init,
 		MultiReturnParameterizedBuiltin,
 		ParameterizedBuiltin,
+		Ternary,
 		Tsmm,
 		MMChain,
 		Reorg,

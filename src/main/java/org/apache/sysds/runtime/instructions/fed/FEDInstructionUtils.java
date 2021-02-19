@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinC
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
@@ -181,6 +182,13 @@ public class FEDInstructionUtils {
 				&& ins.getInput1().isFrame()
 				&& ec.getCacheableData(ins.getInput1()).isFederated()){
 				fedinst = VariableFEDInstruction.parseInstruction(ins);
+			}
+		}
+		else if ( inst instanceof TernaryCPInstruction ){
+			TernaryCPInstruction ins = (TernaryCPInstruction) inst;
+			if ( ins.input1.isMatrix() && ins.input2.isScalar() && ins.input3.isMatrix() &&
+				 ec.getMatrixObject(ins.input3).isFederated() ){
+				fedinst = TernaryFEDInstruction.parseInstruction(ins);
 			}
 		}
 		else if(inst instanceof AggregateTernaryCPInstruction){

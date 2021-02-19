@@ -165,9 +165,14 @@ public class FederationMap {
 		return ret;
 	}
 
+	/**
+	 * Determines if the two federated data objects are aligned row/column partitions
+	 * at the same federated site (which allows for purely federated operation)
+	 * @param that federation map to check for alignment
+	 * @param transposed whether this federation map is transposed
+	 * @return true if this and that federation map is aligned
+	 */
 	public boolean isAligned(FederationMap that, boolean transposed) {
-		// determines if the two federated data are aligned row/column partitions
-		// at the same federated site (which allows for purely federated operation)
 		boolean ret = true;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
