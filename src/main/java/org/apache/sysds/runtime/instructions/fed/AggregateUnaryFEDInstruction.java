@@ -151,6 +151,10 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	}
 
 	private void processVar(ExecutionContext ec){
+		if ( _federatedOutput ){
+			throw new DMLRuntimeException("Output of " + toString() + " should not be federated "
+				+ "since the instruction requires consolidation of partial results to be computed.");
+		}
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();

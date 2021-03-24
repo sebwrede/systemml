@@ -229,7 +229,7 @@ public class PartialAggregate extends Lop
 			InstructionUtils.concatAdditionalOperand(Integer.toString(_numThreads));
 			if ( getOpcode().equalsIgnoreCase("uarimin") || getOpcode().equalsIgnoreCase("uarimax") )
 				InstructionUtils.concatAdditionalOperand("1");
-			if ( getExecType() == ExecType.FED )
+			if ( getExecType() == ExecType.FED && operation != AggOp.VAR )
 				InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
 		}
 		return InstructionUtils.getInstructionString();

@@ -46,6 +46,9 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary);
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary);
+		String2FEDInstructionType.put( "uavar"   , FEDType.AggregateUnary);
+		String2FEDInstructionType.put( "uarvar"   , FEDType.AggregateUnary);
+		String2FEDInstructionType.put( "uacvar"   , FEDType.AggregateUnary);
 
 		// Arithmetic Instruction Opcodes
 		String2FEDInstructionType.put("+"  , FEDType.Binary);
