@@ -1085,6 +1085,7 @@ public class InstructionUtils
 
 	/**
 	 * Returns the current thread-local instruction string.
+	 * This instruction string is built using the concat methods.
 	 * @return instruction string
 	 */
 	public static String getInstructionString(){
